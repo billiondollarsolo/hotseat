@@ -121,7 +121,7 @@ describe('package.json configuration', () => {
     });
 
     it('has valid repository URL', () => {
-      expect(packageJson.repository?.url).toMatch(/^https:\/\/github\.com\//);
+      expect(packageJson.repository?.url).toMatch(/^(git\+)?https:\/\/github\.com\//);
     });
 
     it('has bugs URL', () => {
