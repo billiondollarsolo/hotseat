@@ -203,9 +203,15 @@ describe('ClaudeProvider', () => {
 
       expect(spawn).toHaveBeenCalledWith(
         'claude',
-        expect.arrayContaining(['--print', '--output-format', 'stream-json', '--verbose']),
+        expect.arrayContaining([
+          '--print',
+          '--output-format',
+          'stream-json',
+          '--verbose',
+          'You are a helpful assistant',
+        ]),
         expect.objectContaining({
-          stdio: ['pipe', 'pipe', 'pipe'],
+          stdio: ['ignore', 'pipe', 'pipe'],
         })
       );
     });
@@ -245,7 +251,7 @@ describe('ClaudeProvider', () => {
       );
     });
 
-    it('should send system prompt after spawning', async () => {
+    it('should pass system prompt as argv when spawning', async () => {
       vi.mocked(exec).mockImplementation(
         (_cmd: string, callback?: (error: Error | null, result: { stdout: string; stderr: string }) => void) => {
           if (callback) {
@@ -259,11 +265,12 @@ describe('ClaudeProvider', () => {
 
       await provider.spawn('You are a helpful assistant');
 
-      expect(mockProcess.stdin.write).toHaveBeenCalledWith(
-        'You are a helpful assistant\n',
-        'utf-8',
-        expect.any(Function)
+      expect(spawn).toHaveBeenCalledWith(
+        'claude',
+        expect.arrayContaining(['You are a helpful assistant']),
+        expect.any(Object)
       );
+      expect(mockProcess.stdin.write).not.toHaveBeenCalled();
     });
   });
 
@@ -305,13 +312,19 @@ describe('ClaudeProvider', () => {
       await provider.spawn('System prompt');
     });
 
-    it('should send message to stdin', async () => {
+    it('should start a new Claude process for each user response', async () => {
+      vi.mocked(spawn).mockClear();
+
       await provider.send({ content: 'Hello, Claude!' });
 
-      expect(mockProcess.stdin.write).toHaveBeenCalledWith(
-        'Hello, Claude!\n',
-        'utf-8',
-        expect.any(Function)
+      expect(spawn).toHaveBeenCalledWith(
+        'claude',
+        expect.arrayContaining([
+          expect.stringContaining('User response:\nHello, Claude!'),
+        ]),
+        expect.objectContaining({
+          stdio: ['ignore', 'pipe', 'pipe'],
+        })
       );
     });
 
@@ -395,17 +408,22 @@ describe('ClaudeProvider', () => {
       expect(response.isComplete).toBe(false);
     });
 
-    it('should parse message_stop as complete', async () => {
+    it('should ignore empty message_stop events', async () => {
       const receivePromise = provider.receive();
 
       mockProcess._stdoutEmitter.emit(
         'data',
         Buffer.from('{"type":"message_stop"}\n')
       );
+      mockProcess._stdoutEmitter.emit(
+        'data',
+        Buffer.from('{"type":"result","result":"Done"}\n')
+      );
 
       const response = await receivePromise;
 
       expect(response.isComplete).toBe(true);
+      expect(response.content).toBe('Done');
     });
 
     it('should timeout if no response received', async () => {

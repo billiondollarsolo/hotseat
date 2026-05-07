@@ -23,6 +23,7 @@ const exec = promisify(execCallback);
  */
 interface OutputBuffer {
   data: string;
+  pending: ProviderResponse[];
   resolve: ((value: ProviderResponse) => void) | null;
   reject: ((error: Error) => void) | null;
 }
@@ -40,11 +41,13 @@ export class ClaudeProvider extends BaseProvider {
 
   private outputBuffer: OutputBuffer = {
     data: '',
+    pending: [],
     resolve: null,
     reject: null,
   };
 
   private responseTimeout = 300000; // 5 minutes default timeout
+  private transcript = '';
 
   constructor(config?: Partial<ProviderConfig>) {
     super(config);
@@ -94,17 +97,28 @@ export class ClaudeProvider extends BaseProvider {
       throw new ProviderNotAvailableError(this.name, this.command);
     }
 
-    // Build command arguments
+    this.transcript = systemPrompt;
+    this.startProcess(systemPrompt);
+  }
+
+  /**
+   * Start a one-shot Claude --print process for a prompt.
+   */
+  private startProcess(prompt: string): void {
+    this.outputBuffer.data = '';
+    this.outputBuffer.pending = [];
+
     const args = [
       '--print', // Print mode for non-interactive output
       '--output-format', 'stream-json', // Stream JSON for structured output
       '--verbose', // Enable verbose mode for more context
       ...(this.config.args ?? []),
+      prompt,
     ];
 
     // Spawn the claude process
     this.process = spawn(this.command, args, {
-      stdio: ['pipe', 'pipe', 'pipe'],
+      stdio: ['ignore', 'pipe', 'pipe'],
       env: {
         ...process.env,
         ...this.config.env,
@@ -114,8 +128,8 @@ export class ClaudeProvider extends BaseProvider {
     // Set up event handlers
     this.setupEventHandlers();
 
-    // Send the system prompt as the first message
-    await this.sendRaw(systemPrompt);
+    // Claude --print expects the initial prompt as an argv value. Writing the
+    // first prompt to stdin leaves the CLI waiting in some environments.
   }
 
   /**
@@ -169,10 +183,12 @@ export class ClaudeProvider extends BaseProvider {
 
       try {
         const parsed = this.parseStreamJson(line);
-        if (parsed && this.outputBuffer.resolve) {
-          this.outputBuffer.resolve(parsed);
+        if (parsed && parsed.content.trim() && this.outputBuffer.resolve) {
+          this.outputBuffer.resolve(this.completeResponse(parsed));
           this.outputBuffer.resolve = null;
           this.outputBuffer.reject = null;
+        } else if (parsed && parsed.content.trim()) {
+          this.outputBuffer.pending.push(parsed);
         }
       } catch {
         // Line wasn't valid JSON, continue accumulating
@@ -233,11 +249,7 @@ export class ClaudeProvider extends BaseProvider {
     }
 
     if (json.type === 'message_stop' || json.type === 'content_block_stop') {
-      // End of message
-      return {
-        content: '',
-        isComplete: true,
-      };
+      return null;
     }
 
     if (json.type === 'error') {
@@ -284,31 +296,22 @@ export class ClaudeProvider extends BaseProvider {
    * @throws ProviderStateError if process is not running
    */
   async send(message: ProviderMessage): Promise<void> {
-    if (!this.isRunning()) {
+    if (!this.transcript) {
       throw new ProviderStateError('Provider is not running');
     }
 
-    await this.sendRaw(message.content);
-  }
+    if (this.isRunning()) {
+      const existingTranscript = this.transcript;
+      await this.cleanup();
+      this.transcript = existingTranscript;
+    }
 
-  /**
-   * Send raw text to the process stdin
-   */
-  private sendRaw(text: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (!this.process?.stdin) {
-        reject(new ProviderStateError('Process stdin is not available'));
-        return;
-      }
+    if (!(await this.isAvailable())) {
+      throw new ProviderNotAvailableError(this.name, this.command);
+    }
 
-      this.process.stdin.write(text + '\n', 'utf-8', (error) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve();
-        }
-      });
-    });
+    this.transcript += `\n\nUser response:\n${message.content}\n\nContinue the Hotseat interview. Ask the next best question, or emit the completion block if the PRD is ready.`;
+    this.startProcess(this.transcript);
   }
 
   /**
@@ -323,6 +326,12 @@ export class ClaudeProvider extends BaseProvider {
     }
 
     return new Promise((resolve, reject) => {
+      const pending = this.outputBuffer.pending.shift();
+      if (pending) {
+        resolve(this.completeResponse(pending));
+        return;
+      }
+
       // Set up timeout
       const timeoutId = setTimeout(() => {
         this.outputBuffer.resolve = null;
@@ -353,7 +362,7 @@ export class ClaudeProvider extends BaseProvider {
               this.outputBuffer.data = '';
               this.outputBuffer.resolve = null;
               this.outputBuffer.reject = null;
-              resolve(parsed);
+              resolve(this.completeResponse(parsed));
               return;
             }
           } catch {
@@ -383,12 +392,19 @@ export class ClaudeProvider extends BaseProvider {
     }
     this.outputBuffer = {
       data: '',
+      pending: [],
       resolve: null,
       reject: null,
     };
+    this.transcript = '';
 
     // Call parent cleanup
     await super.cleanup();
+  }
+
+  private completeResponse(response: ProviderResponse): ProviderResponse {
+    this.transcript += `\n\nAssistant response:\n${response.content}`;
+    return response;
   }
 }
 
