@@ -49,7 +49,7 @@ describe('package.json configuration', () => {
 
   describe('basic fields', () => {
     it('has correct name', () => {
-      expect(packageJson.name).toBe('@mjtechguy/hotseat');
+      expect(packageJson.name).toBe('@billiondollarsolo/hotseat');
     });
 
     it('has valid semver version', () => {
@@ -246,7 +246,7 @@ describe('README.md', () => {
     });
 
     it('shows npm install command', () => {
-      expect(readmeContent).toContain('npm install -g @mjtechguy/hotseat');
+      expect(readmeContent).toContain('npm install -g @billiondollarsolo/hotseat');
     });
   });
 

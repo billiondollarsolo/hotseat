@@ -17,7 +17,7 @@ Hotseat is a command-line tool that conducts structured interviews with AI assis
 ## Installation
 
 ```bash
-npm install -g @mjtechguy/hotseat
+npm install -g @billiondollarsolo/hotseat
 ```
 
 ## Prerequisites
@@ -197,7 +197,7 @@ State is automatically cleared after successful PRD generation.
 Hotseat can also be used as a library:
 
 ```typescript
-import { runInterview, exploreCodebase, generateMarkdown } from '@mjtechguy/hotseat';
+import { runInterview, exploreCodebase, generateMarkdown } from '@billiondollarsolo/hotseat';
 
 // Explore codebase
 const exploration = await exploreCodebase('/path/to/project');

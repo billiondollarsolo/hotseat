@@ -137,18 +137,22 @@ Then reinstall or re-enable `hotseat` from Codex's plugin UI and restart Codex C
 The CLI works with multiple AI providers. Run it directly with npx:
 
 ```bash
-npx @mjtechguy/hotseat "user authentication"
+npx @billiondollarsolo/hotseat "user authentication"
 ```
 
-**Prerequisites:** At least one AI CLI tool must be installed:
+**Prerequisites:** At least one AI CLI tool must be installed.
 
-| Provider | CLI Command | Installation |
-|----------|-------------|--------------|
-| Claude Code | `claude` | [anthropic.com](https://anthropic.com) |
-| OpenCode | `opencode` | [opencode.dev](https://opencode.dev) |
-| Cursor | `cursor` or `agent` | [cursor.sh](https://cursor.sh) |
-| Codex | `codex` | `npm install -g @openai/codex` or `brew install --cask codex` |
-| GitHub Copilot | `gh` with Copilot extension | [github.com/copilot](https://github.com/copilot) |
+The table below shows the exact `npx` invocation for each supported AI backend. Replace `"your feature"` with the feature name you want to spec out. Claude is the default provider, so omitting `--provider` is equivalent to `--provider claude`.
+
+| Provider | CLI Command | Hotseat Command | Installation |
+|----------|-------------|-----------------|--------------|
+| Claude Code | `claude` | `npx @billiondollarsolo/hotseat "your feature"` <br>or `npx @billiondollarsolo/hotseat "your feature" --provider claude` | [anthropic.com](https://anthropic.com) |
+| OpenCode | `opencode` | `npx @billiondollarsolo/hotseat "your feature" --provider opencode` | [opencode.dev](https://opencode.dev) |
+| Cursor | `cursor` or `agent` | `npx @billiondollarsolo/hotseat "your feature" --provider cursor` | [cursor.sh](https://cursor.sh) |
+| Codex | `codex` | `npx @billiondollarsolo/hotseat "your feature" --provider codex` | `npm install -g @openai/codex` or `brew install --cask codex` |
+| GitHub Copilot | `gh` with Copilot extension | `npx @billiondollarsolo/hotseat "your feature" --provider copilot` | [github.com/copilot](https://github.com/copilot) |
+
+The `-p` flag is a shorthand for `--provider`, so `npx @billiondollarsolo/hotseat "your feature" -p codex` is equivalent to the `--provider codex` form. To make a non-default provider sticky across runs, set `defaultProvider` in `./hotseat/config.yaml` (see [Configuration](#configuration)).
 
 ## Quick Start
 
@@ -164,7 +168,7 @@ npx @mjtechguy/hotseat "user authentication"
 
 **CLI:**
 ```bash
-npx @mjtechguy/hotseat "user authentication"
+npx @billiondollarsolo/hotseat "user authentication"
 ```
 
 ## Plugin Commands
@@ -286,13 +290,13 @@ Display help documentation about the Hotseat workflow.
 ### Basic Usage
 
 ```bash
-npx @mjtechguy/hotseat "user authentication system"
+npx @billiondollarsolo/hotseat "user authentication system"
 ```
 
 ### Command Reference
 
 ```
-Usage: npx @mjtechguy/hotseat [options] [feature]
+Usage: npx @billiondollarsolo/hotseat [options] [feature]
 
 Arguments:
   feature                          Feature description to plan
@@ -310,20 +314,20 @@ Options:
 
 ```bash
 # With AI provider selection
-npx @mjtechguy/hotseat "feature description" --provider claude
-npx @mjtechguy/hotseat "feature description" --provider opencode
-npx @mjtechguy/hotseat "feature description" --provider cursor
-npx @mjtechguy/hotseat "feature description" --provider codex
+npx @billiondollarsolo/hotseat "feature description" --provider claude
+npx @billiondollarsolo/hotseat "feature description" --provider opencode
+npx @billiondollarsolo/hotseat "feature description" --provider cursor
+npx @billiondollarsolo/hotseat "feature description" --provider codex
 
 # With context files
-npx @mjtechguy/hotseat "feature description" --context docs/spec.md
-npx @mjtechguy/hotseat "feature description" --context docs/spec.md docs/api.md
+npx @billiondollarsolo/hotseat "feature description" --context docs/spec.md
+npx @billiondollarsolo/hotseat "feature description" --context docs/spec.md docs/api.md
 
 # First principles mode
-npx @mjtechguy/hotseat "feature description" --first-principles
+npx @billiondollarsolo/hotseat "feature description" --first-principles
 
 # Resume an interrupted interview
-npx @mjtechguy/hotseat --resume
+npx @billiondollarsolo/hotseat --resume
 ```
 
 ### Using Codex CLI
@@ -338,10 +342,10 @@ codex login
 Then run Hotseat with the Codex provider:
 
 ```bash
-npx @mjtechguy/hotseat "user authentication system" --provider codex
+npx @billiondollarsolo/hotseat "user authentication system" --provider codex
 ```
 
-Codex runs through `codex exec --json`, and Hotseat saves the Codex thread id in `./hotseat/state.yaml`. That lets `npx @mjtechguy/hotseat --resume` continue the same Codex session, including Codex goals when they are available.
+Codex runs through `codex exec --json`, and Hotseat saves the Codex thread id in `./hotseat/state.yaml`. That lets `npx @billiondollarsolo/hotseat --resume` continue the same Codex session, including Codex goals when they are available.
 
 ## Output Files
 
@@ -476,7 +480,7 @@ Use `--first-principles` to challenge assumptions before diving into details:
 
 **CLI:**
 ```bash
-npx @mjtechguy/hotseat "new feature" --first-principles
+npx @billiondollarsolo/hotseat "new feature" --first-principles
 ```
 
 **Phase 1 - Challenge the Approach (3-5 questions):**
@@ -503,10 +507,10 @@ defaultProvider: claude
 outputDirectory: ./hotseat
 ```
 
-Set `defaultProvider: codex` if you want `npx @mjtechguy/hotseat "feature"` to use Codex without passing `--provider codex` each time.
+Set `defaultProvider: codex` if you want `npx @billiondollarsolo/hotseat "feature"` to use Codex without passing `--provider codex` each time.
 
 Interview progress is saved to `./hotseat/state.yaml`, allowing you to:
-- Resume interrupted interviews with `npx @mjtechguy/hotseat --resume`
+- Resume interrupted interviews with `npx @billiondollarsolo/hotseat --resume`
 - Recover from network errors or crashes
 - Continue multi-session planning work
 
@@ -526,7 +530,7 @@ During a plugin interview:
 The CLI can also be used as a library:
 
 ```typescript
-import { runInterview, exploreCodebase, generateMarkdown } from '@mjtechguy/hotseat';
+import { runInterview, exploreCodebase, generateMarkdown } from '@billiondollarsolo/hotseat';
 
 // Explore codebase
 const exploration = await exploreCodebase('/path/to/project');
@@ -574,7 +578,7 @@ Hotseat supports the following file types for `--context`:
    ```bash
    /hotseat:plan "my feature"
    # or
-   npx @mjtechguy/hotseat "my feature"
+   npx @billiondollarsolo/hotseat "my feature"
    ```
 
 2. **Ralph does** - Implement iteratively:
@@ -663,12 +667,12 @@ codex features list | rg default_mode_request_user_input
 
 You can also run `/hotseat:doctor` from Codex to check the current session.
 
-### `npx @mjtechguy/hotseat` cannot find an AI provider
+### `npx @billiondollarsolo/hotseat` cannot find an AI provider
 
 Install and sign in to at least one supported provider CLI: `claude`, `opencode`, `cursor` or `agent`, `codex`, or `gh` with the Copilot extension. You can also select a provider explicitly:
 
 ```bash
-npx @mjtechguy/hotseat "my feature" --provider codex
+npx @billiondollarsolo/hotseat "my feature" --provider codex
 ```
 
 ### Generated files are not where expected
