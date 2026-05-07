@@ -1,0 +1,43 @@
+{
+  "name": "hotseat",
+  "version": "1.0.2",
+  "description": "Hotseat planning interviews for Codex that output implementation-ready goal templates.",
+  "author": {
+    "name": "mjtechguy",
+    "url": "https://github.com/mjtechguy"
+  },
+  "homepage": "https://github.com/billiondollarsolo/hotseat",
+  "repository": "https://github.com/billiondollarsolo/hotseat",
+  "license": "MIT",
+  "keywords": [
+    "hotseat",
+    "planning",
+    "prd",
+    "goals",
+    "codex"
+  ],
+  "skills": "./skills/",
+  "commands": "./commands/",
+  "interface": {
+    "displayName": "Hotseat",
+    "shortDescription": "Interview for specs and turn them into Codex goal templates",
+    "longDescription": "Hotseat conducts structured planning interviews inside Codex and writes goal-template Markdown files designed for Codex CLI goal-based implementation sessions.",
+    "developerName": "mjtechguy",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/billiondollarsolo/hotseat",
+    "privacyPolicyURL": "https://github.com/billiondollarsolo/hotseat",
+    "termsOfServiceURL": "https://github.com/billiondollarsolo/hotseat",
+    "defaultPrompt": [
+      "Use Hotseat to plan a feature as a Codex goal",
+      "Create a goal template for this feature",
+      "Interview me before writing the implementation goal"
+    ],
+    "brandColor": "#111827",
+    "screenshots": []
+  }
+}

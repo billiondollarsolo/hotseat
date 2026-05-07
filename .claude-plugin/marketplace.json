@@ -1,0 +1,20 @@
+{
+  "name": "hotseat",
+  "owner": {
+    "name": "mjtechguy"
+  },
+  "metadata": {
+    "description": "Interactive specification interview workflow for Claude Code"
+  },
+  "plugins": [
+    {
+      "name": "hotseat",
+      "source": "./",
+      "description": "Interactive specification interview workflow that conducts in-depth feature interviews using AskUserQuestion and generates comprehensive specs. Hotseat plans. Ralph does.",
+      "version": "1.2.1",
+      "author": {
+        "name": "mjtechguy"
+      }
+    }
+  ]
+}

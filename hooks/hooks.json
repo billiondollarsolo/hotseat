@@ -1,0 +1,16 @@
+{
+  "description": "Hotseat specification interview plugin",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "printf '\\e[?1004l'",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

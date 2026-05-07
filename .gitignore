@@ -1,0 +1,12 @@
+.DS_Store
+
+.claude/
+docs/
+
+node_modules/
+dist/
+*.tgz
+
+cli/node_modules/
+cli/dist/
+cli/hotseat/
