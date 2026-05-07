@@ -4,11 +4,12 @@
 
 **Hotseat puts you in the "hotseat" and asks you questions to build comprehensive specifications.**
 
-Interactive specification interview workflow that conducts in-depth feature interviews and generates comprehensive specs. Available as both a Claude Code plugin and a standalone CLI that works with multiple AI providers.
+Interactive specification interview workflow that conducts in-depth feature interviews and generates comprehensive specs. Available as a Claude Code plugin, a Codex plugin/skill, and a standalone CLI that works with multiple AI providers.
 
 ## Table of Contents
 
 - [Overview](#overview)
+- [Choose an Interface](#choose-an-interface)
 - [Installation](#installation)
   - [Claude Code Plugin](#claude-code-plugin)
   - [Codex Plugin](#codex-plugin)
@@ -22,20 +23,32 @@ Interactive specification interview workflow that conducts in-depth feature inte
 - [Configuration](#configuration)
 - [Programmatic Usage](#programmatic-usage)
 - [Complete Workflow: Hotseat + Ralph](#complete-workflow-hotseat--ralph)
+- [Troubleshooting](#troubleshooting)
 - [Development](#development)
 - [License](#license)
+- [Credits](#credits)
 
 ## Overview
 
-Based on the technique described by [@trq212](https://twitter.com/trq212):
-
-> My favorite way to use Claude Code to build large features is spec based. Start with a minimal spec or prompt and ask Claude to interview you using the AskUserQuestion tool about literally anything: technical implementation, UI & UX, concerns, tradeoffs, etc. Then make a new session to execute the spec.
+Hotseat follows a spec-first planning pattern popularized by [@trq212](https://twitter.com/trq212): start with a rough feature idea, have the agent interview you about the important product and technical details, then use the resulting spec in a fresh implementation session.
 
 Hotseat automates this workflow by:
 - Conducting structured interviews about your feature
 - Generating comprehensive PRDs in Markdown and JSON formats
 - Supporting resume of interrupted sessions
 - Optionally challenging assumptions with first-principles questioning
+
+## Choose an Interface
+
+Hotseat has three entry points:
+
+| Interface | Best for | Output |
+|-----------|----------|--------|
+| Claude Code plugin | Claude Code users who want an AskUserQuestion-driven spec interview | PRD Markdown, structured JSON, and Ralph progress file |
+| Codex plugin/skill | Codex users who want a goal-template planning interview before implementation | `docs/goals/{slug}.goal.md` |
+| Standalone CLI | Terminal use across Claude, OpenCode, Cursor, Codex, or Copilot providers | `./hotseat/{slug}.md` and `./hotseat/{slug}.json` |
+
+Use the plugin surfaces when you are already inside an agent session. Use the CLI when you want provider selection, terminal prompts, or output independent of a plugin install.
 
 ## Installation
 
@@ -52,6 +65,13 @@ Hotseat automates this workflow by:
 ### Codex Plugin
 
 This repository also includes a Codex-native plugin under `plugins/hotseat`. It is separate from the Claude Code plugin and outputs Codex goal-template Markdown files.
+
+Clone the repository first if you do not already have it locally:
+
+```bash
+git clone https://github.com/billiondollarsolo/hotseat.git
+cd hotseat
+```
 
 From this repository root, add the local Codex marketplace:
 
@@ -70,6 +90,14 @@ Then install or enable the `hotseat` plugin from Codex's plugin UI. The plugin e
 
 The generated `.goal.md` file includes a `Codex Goal Prompt` section intended for Codex CLI's `/goal` workflow.
 
+The Codex skill can also be triggered conversationally after the plugin is installed. For example:
+
+```text
+Use Hotseat to plan a billing alerts feature.
+```
+
+If you only say `use Hotseat`, Codex should ask what feature, change, or project you want to plan.
+
 For native selectable interview prompts in Codex Default mode, enable Codex's `request_user_input` feature:
 
 ```toml
@@ -84,6 +112,14 @@ codex features list | rg default_mode_request_user_input
 ```
 
 Current Codex native prompts should be treated as single-select plus optional notes. Use the standalone CLI if you need terminal checkbox-style multi-select prompts today.
+
+To check readiness in the current Codex session, run:
+
+```bash
+/hotseat:doctor
+```
+
+`/hotseat:doctor` reports whether the plugin metadata is visible and whether native selectable prompts are available in the active session. `/hotseat:plan` also checks for the `request_user_input` tool before the first interview question. If the tool is unavailable, it explains the feature-flag requirement and only continues with plain-text questions if you accept that fallback.
 
 If a local edit is not picked up, remove and re-add the local marketplace so Codex refreshes its plugin cache:
 
@@ -548,6 +584,52 @@ The generated spec includes a pre-formatted Ralph Loop command with phases and v
 
 Use with [ralph-loop](https://github.com/anthropics/claude-plugins-official/tree/main/plugins/ralph-loop) for a complete planning-to-implementation workflow.
 
+## Troubleshooting
+
+### Codex does not show `/hotseat:*` commands
+
+Refresh the local marketplace and restart Codex:
+
+```bash
+codex plugin marketplace remove hotseat
+codex plugin marketplace add .
+```
+
+Then reinstall or re-enable the `hotseat` plugin from Codex's plugin UI.
+
+### Codex asks plain-text questions instead of native prompts
+
+Enable native user input in `~/.codex/config.toml`:
+
+```toml
+[features]
+default_mode_request_user_input = true
+```
+
+Restart Codex, then verify:
+
+```bash
+codex features list | rg default_mode_request_user_input
+```
+
+You can also run `/hotseat:doctor` from Codex to check the current session.
+
+### `npx @mjtechguy/hotseat` cannot find an AI provider
+
+Install and sign in to at least one supported provider CLI: `claude`, `opencode`, `cursor` or `agent`, `codex`, or `gh` with the Copilot extension. You can also select a provider explicitly:
+
+```bash
+npx @mjtechguy/hotseat "my feature" --provider codex
+```
+
+### Generated files are not where expected
+
+- Claude Code plugin output defaults to `docs/specs`.
+- Codex plugin output defaults to `docs/goals`.
+- Standalone CLI output defaults to `./hotseat`.
+
+Use `--output-dir` where supported to write somewhere else.
+
 ## Development
 
 ### Plugin Development
@@ -708,3 +790,7 @@ MIT
 
 **Version:** 1.2.0 (Plugin) | 0.1.0 (CLI)
 **Author:** mjtechguy
+
+## Credits
+
+Hotseat builds on the interactive planning pattern used by the [Lisa plugin](https://github.com/blencorp/lisa) and adapts it for Hotseat's spec, PRD, and Codex goal-template workflows.
