@@ -62,6 +62,8 @@ Use the plugin surfaces when you are already inside an agent session. Use the CL
 /plugin install hotseat
 ```
 
+> **First-run note:** The first time you run `/hotseat:plan` after installing, Claude Code's permission system may deny the setup script because it lives in a freshly-installed marketplace cache. This is expected and easily resolved — see [Claude Code denies /hotseat:plan with a permission error](#claude-code-denies-hotseatplan-with-a-permission-error) in Troubleshooting.
+
 ### Codex Plugin
 
 This repository also includes a Codex-native plugin under `plugins/hotseat`. It is separate from the Claude Code plugin and outputs Codex goal-template Markdown files.
@@ -586,6 +588,53 @@ Use with [ralph-loop](https://github.com/anthropics/claude-plugins-official/tree
 
 ## Troubleshooting
 
+### Claude Code denies `/hotseat:plan` with a permission error
+
+If your first run of `/hotseat:plan` fails with a message like:
+
+```
+Error: Shell command permission check failed for pattern
+"${CLAUDE_PLUGIN_ROOT}/scripts/setup-hotseat.sh ...":
+Permission for this action has been denied.
+Reason: Executing a script from a freshly installed third-party
+plugin marketplace cache — untrusted external code integration
+without explicit user authorization for this specific script.
+```
+
+…that is Claude Code's permission system blocking the Hotseat setup script because it was just downloaded into the plugin cache (`~/.claude/plugins/cache/hotseat/hotseat/<version>/scripts/setup-hotseat.sh`). It is most common when `permissions.defaultMode` is set to `auto` in `~/.claude/settings.json`, where Claude evaluates each tool call and tends to be conservative about scripts from brand-new third-party installs.
+
+The plugin itself is not broken — you just need to grant Hotseat's setup script permission to run. Choose one of the following.
+
+#### Option 1 — Allowlist the script (recommended)
+
+Create or edit `.claude/settings.local.json` in the project where you use Hotseat:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(/Users/<you>/.claude/plugins/cache/hotseat/hotseat/*/scripts/setup-hotseat.sh:*)"
+    ]
+  }
+}
+```
+
+Replace `<you>` with your username. The `*` on the version segment means the rule survives plugin updates. To grant the rule globally instead of per-project, add the same `permissions.allow` entry to `~/.claude/settings.json`.
+
+#### Option 2 — Run from a local clone
+
+If you are developing or modifying Hotseat, point Claude Code at your clone instead of the marketplace cache:
+
+```bash
+cc --plugin-dir /path/to/hotseat
+```
+
+Scripts under your own working directory are not subject to the "freshly-installed third-party cache" heuristic.
+
+#### Option 3 — Bypass permissions for the session
+
+As a last resort you can launch Claude Code with `--dangerously-skip-permissions` (alias `--yolo`). This disables permission checks for the **entire session**, including every other plugin and tool call, so prefer Option 1 for everyday use. Only use this flag in environments where you already trust everything in your plugin set.
+
 ### Codex does not show `/hotseat:*` commands
 
 Refresh the local marketplace and restart Codex:
@@ -794,3 +843,9 @@ MIT
 ## Credits
 
 Hotseat builds on the interactive planning pattern used by the [Lisa plugin](https://github.com/blencorp/lisa) and adapts it for Hotseat's spec, PRD, and Codex goal-template workflows.
+
+## About
+
+Hotseat is an open-source project created by [mjtechguy](https://github.com/mjtechguy) to help developers and product teams build better specifications with AI-assisted interviews. It is not affiliated with any AI provider and supports multiple platforms through its plugin and CLI interfaces.
+
+Built as part of the [Billion Dollar Solo](https://x.com/BlnDollarSolo) project, which aims to empower solo developers to build impactful products with AI.
